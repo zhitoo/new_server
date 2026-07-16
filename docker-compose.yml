@@ -1,0 +1,161 @@
+networks:
+  shared_network:
+    external: true
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    command: >
+      --innodb-buffer-pool-size=${MYSQL_INNODB_BUFFER_POOL_SIZE}
+      --max-connections=${MYSQL_MAX_CONNECTIONS}
+      ${MYSQL_DISABLE_BINLOG:+--skip-log-bin}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "127.0.0.1:3306:3306"
+    networks:
+      - shared_network
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      PMA_HOST: mysql
+    depends_on:
+      - mysql
+    ports:
+      - "127.0.0.1:8585:80"
+    networks:
+      - shared_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:9090:80"
+    networks:
+      - shared_network
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:81:81"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - shared_network
+
+  typesense:
+    image: typesense/typesense:27.1
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      TYPESENSE_DATA_DIR: /data
+      TYPESENSE_ENABLE_CORS: "true"
+    volumes:
+      - typesense_data:/data
+    ports:
+      - "127.0.0.1:8108:8108"
+    networks:
+      - shared_network
+
+  typesense-dashboard:
+    image: bfritscher/typesense-dashboard
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - typesense
+    ports:
+      - "127.0.0.1:8109:80"
+    networks:
+      - shared_network
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE}
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - shared_network
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    logging: *default-logging
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory ${REDIS_MAXMEMORY} --maxmemory-policy ${REDIS_MAXMEMORY_POLICY}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - shared_network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD}
+      HTTP_USER: ${REDIS_COMMANDER_USER}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD}
+    depends_on:
+      - redis
+    ports:
+      - "127.0.0.1:8082:8081"
+    networks:
+      - shared_network
+
+volumes:
+  mysql_data:
+    name: mysql_data
+  npm_data:
+    name: npm_data
+  npm_letsencrypt:
+    name: npm_letsencrypt
+  typesense_data:
+    name: typesense_data
+  postgres_data:
+    name: postgres_data
+  redis_data:
+    name: redis_data
+  pgadmin_data:
+    name: pgadmin_data
