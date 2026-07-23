@@ -59,20 +59,20 @@ services:
     networks:
       - shared_network
 
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: nginx-proxy-manager
-    restart: unless-stopped
-    logging: *default-logging
-    ports:
-      - "80:80"
-      - "443:443"
-      - "127.0.0.1:81:81"
-    volumes:
-      - npm_data:/data
-      - npm_letsencrypt:/etc/letsencrypt
-    networks:
-      - shared_network
+  # nginx-proxy-manager:
+  #   image: jc21/nginx-proxy-manager:latest
+  #   container_name: nginx-proxy-manager
+  #   restart: unless-stopped
+  #   logging: *default-logging
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #     - "127.0.0.1:81:81"
+  #   volumes:
+  #     - npm_data:/data
+  #     - npm_letsencrypt:/etc/letsencrypt
+  #   networks:
+  #     - shared_network
 
   typesense:
     image: typesense/typesense:27.1
@@ -153,13 +153,46 @@ services:
     networks:
       - shared_network
 
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - shared_network
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+    depends_on:
+      - mongo
+    ports:
+      - "127.0.0.1:8083:8081"
+    networks:
+      - shared_network
+
 volumes:
   mysql_data:
     name: mysql_data
-  npm_data:
-    name: npm_data
-  npm_letsencrypt:
-    name: npm_letsencrypt
+  # npm_data:
+  #   name: npm_data
+  # npm_letsencrypt:
+  #   name: npm_letsencrypt
   typesense_data:
     name: typesense_data
   postgres_data:
@@ -168,3 +201,5 @@ volumes:
     name: redis_data
   pgadmin_data:
     name: pgadmin_data
+  mongo_data:
+    name: mongo_data
