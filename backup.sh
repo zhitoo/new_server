@@ -8,7 +8,9 @@ cd "$(dirname "$0")"
 
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-7}"
-VOLUMES="mysql_data postgres_data redis_data typesense_data npm_data npm_letsencrypt pgadmin_data"
+VOLUMES="mysql_data postgres_data redis_data typesense_data mongo_data pgadmin_data"
+# ponytail: npm_data/npm_letsencrypt are only real while nginx-proxy-manager is
+# uncommented in docker-compose.yml — add them back here if you enable it.
 
 STAMP=$(date +%Y%m%d-%H%M%S)
 DEST="$BACKUP_DIR/$STAMP"
@@ -17,6 +19,12 @@ mkdir -p "$DEST"
 docker compose stop
 
 for vol in $VOLUMES; do
+  # ponytail: -v on a missing volume silently creates an empty one, so an
+  # out-of-date VOLUMES list would produce empty tarballs that look fine.
+  if ! docker volume inspect "$vol" >/dev/null 2>&1; then
+    echo "Skipping ${vol}: no such volume" >&2
+    continue
+  fi
   docker run --rm -v "${vol}:/data:ro" -v "$DEST:/backup" alpine \
     tar czf "/backup/${vol}.tar.gz" -C /data .
   tar tzf "$DEST/${vol}.tar.gz" >/dev/null   # sanity check: archive isn't corrupt
