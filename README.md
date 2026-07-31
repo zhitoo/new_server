@@ -1,7 +1,7 @@
 # new_server
 
 استک داکر برای سرویس‌های مشترک روی سرور: MySQL، Postgres، MongoDB، Redis،
-Typesense و پنل‌های وب‌شون. هدف اینه که این سرویس‌ها یک‌بار بالا بیان و
+Typesense، MinIO و پنل‌های وب‌شون. هدف اینه که این سرویس‌ها یک‌بار بالا بیان و
 اپ‌های دیگه‌ای که روی همین سرور (به‌صورت کانتینر) اجرا میشن ازشون استفاده کنن.
 
 راهنمای نصب PHP روی خود هاست: [`PHP-INSTALL.md`](PHP-INSTALL.md)
@@ -30,6 +30,7 @@ UID/GID `1000` و اسم `DEPLOY_USER` (از `.env`) می‌سازه و به گ�
 | mongo | 27017 | با auth (`MONGO_ROOT_USER` / `MONGO_ROOT_PASSWORD`) |
 | redis | 6379 | با AUTH (`REDIS_PASSWORD`) |
 | typesense | 8108 | با API key (`TYPESENSE_API_KEY`) |
+| minio | 9000 (API) / 9001 (کنسول) | با `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
 | phpmyadmin | 8585 | وب UI برای mysql |
 | pgadmin | 9090 | وب UI برای postgres |
 | mongo-express | 8083 | وب UI برای mongo (با Basic Auth) |
@@ -40,7 +41,7 @@ UID/GID `1000` و اسم `DEPLOY_USER` (از `.env`) می‌سازه و به گ�
 پسورد و تنظیمات پرفورمنس (buffer pool، max connections، maxmemory و ...) تو
 `.env.example` با توضیح فارسی هست.
 
-## دسترسی به پنل‌های ادمین (phpmyadmin, pgadmin, mongo-express, redis-commander, typesense-dashboard)
+## دسترسی به پنل‌های ادمین (phpmyadmin, pgadmin, mongo-express, redis-commander, typesense-dashboard, minio)
 
 همه‌شون فقط رو `127.0.0.1` سرور باز هستن، یعنی از بیرون سرور اصلاً دیده
 نمیشن. برای وصل‌شدن از سیستم خودت یه SSH tunnel بزن (همه‌ی پورت‌ها با هم):
@@ -48,6 +49,7 @@ UID/GID `1000` و اسم `DEPLOY_USER` (از `.env`) می‌سازه و به گ�
 ```bash
 ssh -L 8585:127.0.0.1:8585 -L 9090:127.0.0.1:9090 -L 8082:127.0.0.1:8082 \
     -L 8083:127.0.0.1:8083 -L 8108:127.0.0.1:8108 -L 8109:127.0.0.1:8109 \
+    -L 9000:127.0.0.1:9000 -L 9001:127.0.0.1:9001 \
     user@your-server
 ```
 
@@ -66,6 +68,10 @@ ssh -L 8585:127.0.0.1:8585 -L 9090:127.0.0.1:9090 -L 8082:127.0.0.1:8082 \
   خودِ جاوااسکریپتِ تو مرورگرت مستقیم به API تایپ‌سنس می‌زنه، برای همین پورت
   `8108` رو هم باید تونل کنی (بالا زدم). موقع اضافه‌کردن Node تو داشبورد:
   Host `127.0.0.1`، Port `8108`، Protocol `http`، API Key = `TYPESENSE_API_KEY`
+- MinIO: کنسول وب `http://127.0.0.1:9001` — لاگین با `MINIO_ROOT_USER` /
+  `MINIO_ROOT_PASSWORD`. خودِ API رو رو `http://127.0.0.1:9000` می‌شنوه (S3-
+  compatible)، برای اپ‌های دیگه از هاست‌نیم `minio` و پورت `9000` تو
+  `shared_network` استفاده کن
 
 ## اضافه‌کردن اپ‌های دیگه به Nginx Proxy Manager
 
@@ -111,11 +117,11 @@ services:
   myapp:
     networks: [shared_network]
     environment:
-      DB_HOST: mysql       # یا postgres / mongo / redis / typesense
+      DB_HOST: mysql       # یا postgres / mongo / redis / typesense / minio
 ```
 
-هاست‌نیم همون اسم سرویسه (`mysql`, `postgres`, `mongo`, `redis`, `typesense`)،
-نه `127.0.0.1` و نه پورت پابلیش‌شده.
+هاست‌نیم همون اسم سرویسه (`mysql`, `postgres`, `mongo`, `redis`, `typesense`,
+`minio`)، نه `127.0.0.1` و نه پورت پابلیش‌شده.
 
 ## لاگ
 
@@ -129,7 +135,7 @@ services:
 ```
 
 استک رو چند ثانیه متوقف می‌کنه، هر ولوم (`mysql_data`, `postgres_data`,
-`redis_data`, `typesense_data`, `mongo_data`, `pgadmin_data`) رو به‌صورت
+`redis_data`, `typesense_data`, `mongo_data`, `pgadmin_data`, `minio_data`) رو به‌صورت
 `tar.gz` تو `backups/<تاریخ-ساعت>/` می‌ریزه، دوباره استک رو بالا میاره و
 بکاپ‌های قدیمی‌تر از ۷ روز رو پاک می‌کنه. ولومی که وجود نداشته باشه رد میشه
 (با پیام روی stderr) تا بکاپ خالی تولید نشه.

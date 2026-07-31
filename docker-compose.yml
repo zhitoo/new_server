@@ -186,6 +186,23 @@ services:
     networks:
       - shared_network
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    networks:
+      - shared_network
+
 volumes:
   mysql_data:
     name: mysql_data
@@ -203,3 +220,5 @@ volumes:
     name: pgadmin_data
   mongo_data:
     name: mongo_data
+  minio_data:
+    name: minio_data
