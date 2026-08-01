@@ -32,6 +32,7 @@ UID/GID `1000` و اسم `DEPLOY_USER` (از `.env`) می‌سازه و به گ�
 | typesense | 8108 | با API key (`TYPESENSE_API_KEY`) |
 | minio | 9000 (API) / 9001 (کنسول) | با `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
 | phpmyadmin | 8585 | وب UI برای mysql |
+| adminer | 8686 | وب UI سبک برای mysql/postgres/mongo (لاگین با انتخاب سرور موقع ورود) |
 | pgadmin | 9090 | وب UI برای postgres |
 | mongo-express | 8083 | وب UI برای mongo (با Basic Auth) |
 | redis-commander | 8082 | وب UI برای redis (با Basic Auth) |
@@ -47,9 +48,9 @@ UID/GID `1000` و اسم `DEPLOY_USER` (از `.env`) می‌سازه و به گ�
 نمیشن. برای وصل‌شدن از سیستم خودت یه SSH tunnel بزن (همه‌ی پورت‌ها با هم):
 
 ```bash
-ssh -L 8585:127.0.0.1:8585 -L 9090:127.0.0.1:9090 -L 8082:127.0.0.1:8082 \
-    -L 8083:127.0.0.1:8083 -L 8108:127.0.0.1:8108 -L 8109:127.0.0.1:8109 \
-    -L 9000:127.0.0.1:9000 -L 9001:127.0.0.1:9001 \
+ssh -L 8585:127.0.0.1:8585 -L 8686:127.0.0.1:8686 -L 9090:127.0.0.1:9090 \
+    -L 8082:127.0.0.1:8082 -L 8083:127.0.0.1:8083 -L 8108:127.0.0.1:8108 \
+    -L 8109:127.0.0.1:8109 -L 9000:127.0.0.1:9000 -L 9001:127.0.0.1:9001 \
     user@your-server
 ```
 
@@ -57,6 +58,9 @@ ssh -L 8585:127.0.0.1:8585 -L 9090:127.0.0.1:9090 -L 8082:127.0.0.1:8082 \
 
 - phpMyAdmin: `http://127.0.0.1:8585` — سرور `mysql`، یوزر `root`، رمز
   `MYSQL_ROOT_PASSWORD`
+- Adminer: `http://127.0.0.1:8686` — تو فرم لاگین، System رو `MySQL` یا
+  `PostgreSQL` انتخاب کن، Server رو `mysql` یا `postgres` بذار، بعد یوزر/رمز
+  همون دیتابیس رو بزن (مثلاً برای mysql یوزر `root` و `MYSQL_ROOT_PASSWORD`)
 - pgAdmin: `http://127.0.0.1:9090` — لاگین با `PGADMIN_DEFAULT_EMAIL` /
   `PGADMIN_DEFAULT_PASSWORD`، بعد یه سرور جدید اضافه کن با Host `postgres`،
   پورت `5432`، یوزر `postgres`، رمز `POSTGRES_PASSWORD`

@@ -186,6 +186,16 @@ services:
     networks:
       - shared_network
 
+  adminer:
+    image: adminer
+    container_name: adminer
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:8686:8080"
+    networks:
+      - shared_network
+
   minio:
     image: minio/minio
     container_name: minio
