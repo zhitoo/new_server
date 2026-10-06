@@ -197,16 +197,19 @@ services:
       - shared_network
 
   minio:
-    image: minio/minio
+    # minio/minio was removed from Docker Hub; bitnamilegacy is frozen (no security updates).
+    # pinned: later builds dropped the web console on :9001
+    image: bitnamilegacy/minio:2025.4.22
     container_name: minio
     restart: unless-stopped
     logging: *default-logging
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
+      MINIO_API_PORT_NUMBER: 9000
+      MINIO_CONSOLE_PORT_NUMBER: 9001
     volumes:
-      - minio_data:/data
+      - minio_data:/bitnami/minio/data
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
